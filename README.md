@@ -1,195 +1,247 @@
-# 如何在WSL运行openEuler
+[toc]
 
-1. 使用我构建好的启动包
-2. 手动导入openEuler的docker镜像
+*Read this in other languages:* [English](./README.md), [简体中文](./README.zh-cn.md)
 
-## 使用我构建好的启动包
+# How to run openEuler under WSL
 
-由于该UWP还没有上传到微软商店，因此暂时只能在本地打开，有2种方法：
+1. Configuring the Windows environment.
+2. Use the distro.exe I have built already.
+3. Or manually import openEuler into WSL.
 
-1. 双击运行 x64\Debug\launcher.exe，安装openEuler
-2. 或者按照以下步骤构建安装包。请注意，我还没有在其他电脑上测试，不确定我生成的签名在其他电脑上是否会导致错误
+## Configuring the Windows environment
 
-### 使用工程文件构建启动包
+You can reference the [Official doc](https://docs.microsoft.com/en-us/windows/wsl/install-win10)，or follow the following instructions.
 
-使用Visual Studio打开WSL-DistroLauncher工程下的DistroLauncher.sln
+Open PoweShell, you can press Win+Q to search PoweShell.
 
-在Solution Explorer，一般在右侧，可以看到以下界面
+Copy and paste those  commands.
 
-![Solution](./readme_img/Solution.png)
+1. Enable the Windows Subsystem for Linux.
 
-右键点击"Solution (DistroLauncher)"，在弹出菜单中点击Deploy Solution
-
-等待编译完成后，即可在左下角Windows开始菜单中启动openEuler
-
-![image-start_menu](./readme_img/start_menu.png)
-
-点击即可运行openEuler
-
-或者命令行运行：
-
+```powershell
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 ```
+
+2. Enable Virtual Machine feature.
+
+```shell
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+```
+
+3. Download [the Linux kernel update package](https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi)，Double-click to run, administrator privileges may be required.
+4. Set WSL 2 as your default version.
+
+```shell
+wsl --set-default-version 2
+```
+
+5. Open [Microsoft Store](https://aka.ms/wslstore),and select your favorite Linux distribution, click get.
+
+   The first time you launch a newly installed Linux distribution, a console window will open and you'll be asked to wait for a minute or two for files to de-compress and be stored on your PC. All future launches should take less than a second.
+
+If you have any of these questions, you can refer to [official website](https://docs.microsoft.com/en-us/windows/wsl/install-win10) document .
+
+Please note that if you have not upgraded Windows to 20H2, WSL will conflict with VMware when enabled, and only one of them can exist.
+
+This will be fixed if you upgrade to 20H2.
+
+Press win+R, type winver, enter, you can see your Windows verison.
+
+![image-20210421151135902](README.assets/image-20210421151135902.png)
+
+## Use the distro.exe
+
+Since the UWP has not been uploaded to the Microsoft Store, we can only use this package locally for the time being. 
+
+We plan to push the package to the Microsoft App Store in the future.
+
+1. [Download appx.zip.](https://github.com/apple-ouyang/WSL-DistroLauncher/releases)
+2. Decompress it.
+3. Double-click on mydistro.exe to install openEuler.
+
+When the pop-up command window is complete, the installation is complete, you can run openEuler:
+
+1. Start openEuler in the Windows Start Menu.
+
+![image-start_menu](./README.assets/start_menu.png)
+
+2. Or you can star it in cmd.
+
+```shell
 wsl -d openEuler
 ```
 
-![image-openEuler_in_wsl](./readme_img/openEuler_in_wsl.png)
+If something like the screenshot below appears, it starts successfully.
 
-## 手动导入openEuler
-
-参考文档：https://docs.microsoft.com/en-us/windows/wsl/use-custom-distro
-
-下载openEuler LTS的补丁镜像中的docker镜像：https://repo.openeuler.org/openEuler-20.03-LTS-SP1/docker_img/x86_64/openEuler-docker.x86_64.tar.xz
+![image-openEuler_in_wsl](README.assets/openEuler_in_wsl.png)
 
 
 
-**在下载的镜像所处文件夹下启动WSL下的Ubuntu**，此时Ubuntu工作目录为当前目录
+## Manually import openEuler
 
-```
+[official documentation](https://docs.microsoft.com/en-us/windows/wsl/use-custom-distro)
+
+1. You need to get a root file system that contains all of openEuler's binaries.
+   1. Export the container file system using Docker.
+   2. Or use Debootstrap to create a root file system (not tried yet).
+2. Import the root file system using the WSL command.
+
+### Export the container file system using Docker
+
+[referenced document](https://docs.microsoft.com/en-us/windows/wsl/use-custom-distro)：
+
+1. Download the Docker image of openEuler LTS SP1，[Link.](https://repo.openEuler.org/openEuler-20.03-LTS-SP1/docker_img/x86_64/openEuler-docker.x86_64.tar.xz)
+2. Open the console, **go to the folder** where you just downloaded the image. Start Ubuntu, and you will find your working directory is still in the same place.
+
+```shell
+cd D:\Download
 wsl -d Ubuntu
 ```
 
+3. Install docker under Ubuntu.
 
-
-安装Ubuntu下的docker
-
-```
-curl -fsSL https://get.docker.com | bash -s docker --mirror Aliyun
+```shell
+curl -sSL https://get.daocloud.io/docker | sh
 ```
 
-
-
-导入镜像，-i表示使用tar包来导入镜像
+4. Import the image. -i indicates that the tar package is used to import the image.
 
 ```shell
 docker load -i .\openEuler-docker.x86_64.tar.xz
 ```
 
+5. List the current images.
 
-
-查看现有images
-
-```
+```shell
 docker images
 ```
 
+You should have the following output:
 
-
-应该会有以下输出：
-
-```
+```shell
 REPOSITORY                 TAG       IMAGE ID       CREATED         SIZE
-openeuler-20.03-lts-sp1    latest    6934cec25f28   3 months ago    512MB
+openEuler-20.03-lts-sp1    latest    6934cec25f28   3 months ago    512MB
 ```
 
-
-
-随便运行一个命令，加载容器
+6. Run any command to load the container.
 
 ```sh
-docker run openeuler-20.03-lts-sp1 echo hello, openEuler WSL
+docker run openEuler-20.03-lts-sp1 echo hello, openEuler WSL
 ```
 
+7. Export a snapshot of the Docker container, which is the current file system.
 
-
-导出docker容器的快照，即当前文件系统。
-
-docker ps -ql表示获得最近运行的容器的编号，即刚才openEuler的容器编号
+docker ps -ql means to get the container number of the most recently run container, which is just the container number of openEuler.
 
 ```shell
 docker export $(docker ps -ql) > ./openEuler.tar
+exit
 ```
 
+### Import the root file system using the WSL command
 
+Quit Ubuntu, use the WSL command in the console to import the openEuler package, meanwhile specify  an openEuler installation directory. 
 
-退出Ubuntu，启动WSL，导入openEuler包。
+For example, set D:\work\WSL\ openEuler as the WSL installation directory
 
-设置D:\work\WSL\openEuler为WSL的安装目录
-
-```
+```shell
 wsl --import openEuler D:\work\WSL\openEuler .\openEuler.tar
 ```
 
+9. You can start openEuler.
 
-
-即可启动openEuler
-
-```
+```shell
 wsl -d openEuler
 ```
 
 
 
-## 构建launcher.exe的过程
+# The process of building a distro.exe
 
-1. 克隆官方启动器的仓库，修改启动器基本信息：使用Visual Studio，修改软件包名称，发布公司，修改图片logo等。
-2. 安装WSL、Ubuntu
-3. 导出docker：在Ubuntu下使用load命令载入docker镜像，使用export导出容器当前文件系统快照，压缩为install.tar.gz
-4. 构建包：将install.tar.gz，放入工程项目根目录下
-5. 使用VS，构建项目解决方案
-6. 在windows开始菜单中出现openEuler图标，点击即可运行openEuler-WSL
+**If you just want to run openEuler, you can stop here**.
 
-## 详细过程
+If you're interested in the build process, you can read on.
 
-### 克隆，修改基本信息
+## The general process of building MyDitro.exe
+
+1. Clone, modify launcher basic information.
+
+2. Install WSL, Ubuntu.
+
+3. Export the root file system.
+
+## Clone, modify the basic information
+
+Clone the official launcher repository.
 
 ```shell
 git clone https://github.com/Microsoft/WSL-DistroLauncher
 ```
 
+Install Visual Studio, and choose to install the "Common Windows Platform Development tool".
 
+Use Visual Studio to open the **distrolauncher.sln** under the wsl-distrolauncher project.
 
-首先安装Visual Studio，VS code好像没有下面会用到的功能
+Double-click to open MyDistro.appxmanifest, and VS will automatically probe the XML format and display a nice screen like this.
 
-在Visual Studio中打开项目文件
+![image-20210412172319111](./README.assets/packaging.png)
 
-双击打开MyDistro.appxmanifest，此时VS会自动探测xml格式，并出现很好看的修改界面如下。
+If you don't see the above screen but just a full-text interface. Please click the toggle button below, and then double-click on distrolauncher.sln.
 
-![image-20210412172319111](./readme_img/packaging.png)
+![image-20210421150031934](./README.assets/image-20210421150031934.png)
 
-如果是纯xml文件，需要配置相关环境，这里我百度卡了很久，具体解决方法忘了，好像是要VS中装C++桌面开发需要的SDK
+Click on the Packaging TAB, click Choose Certificate... , click the Create... Publish Name. I use Huawei, I wanted to use HUAWEI Technologies Co., Ltd, but it got an error, so I just used Huawei. Then enter the password to create the certificate.
 
+Modify the basic information under the Application TAB and modify the Visual Asserts image information.
 
+Asserts Generator can be used for generating images of different sizes. 
 
-在该的界面上，点击Packaging选项卡，点击Choose Certificate...，点击Create...，这里输入Publish Name，我输入了Huawei，本来想用全称HUAWEI TECHNOLOGIES CO., LTD，但是会报错，就用了Huawe。然后输入密码，即可创建证书。
+The logo on the official website is too small, so I found the vector picture of the logo and AI file in the department. I  enlarged it, and took Ubuntu startup icon as reference, cut out the text part, and only retained the logo, so as to make the generated logo look better in the startup interface.
 
+All the resulting images can be seen in my project files.
 
+## Install Ubuntu under WSL
 
-修改Application选项卡下的基本信息，修改Visual Asserts图片信息。
+[Refer to the Configuring the Windows environment](# Configuring the Windows environment)
 
-图片信息可以使用Asserts Generator，在基于一个logo的图片下，生成不同大小的格式的图片。
+## Export the root file system
 
-官网的logo太小，我找到了部门里的logo矢量图.ai文件，放大了些，并参考Ubuntu启动图标，裁剪了文字部分，只保留了logo，尽量让产生的logo在启动界面好看一些。最后生成的所有图片可以看我的工程文件。
+[Refer to the manual import section](# 手动导入openEuler)
 
-### 安装WSL、Ubuntu
+Change the last step to:
 
-安装WSL可以参考官方文档，https://docs.microsoft.com/en-us/windows/wsl/install-win10
-
-然后应用商店安装Ubuntu，运行后自动创建root用户，输入用户名密码即可
-
-### 导出docker
-
-[参考手动导入一节](# 手动导入openEuler)
-
-最后一步改为
-
-```
+```shell
 docker export $(docker ps -ql) > ./install.tar
 ```
 
-退出Ubuntu，压缩刚才的包
+Quit Ubuntu and compress the package.
 
-```
+```shell
 exit
 gzip.exe -k .\install.tar
 ```
 
--k表示保留包，不删除
+-k means to keep the package, not delete it.
 
-### 构建包
+## Build 
 
-将install.tar.gz复制到项目的根目录下
+Copy install.tar.gz to the root of your project.
 
-右键点击VS解决方案目录下的"Solution (DistroLauncher)"，点击Deploy Solution
+Right-click "Solution (DistroLauncher)" in the VS Solution directory and click Deploy Solution.
 
-等待即可构建完成
+Wait for the build to complete.
+
+In the Solution Explorer on the right, you can see the following screen.
+
+![Solution](./README.assets/Solution.png)
+
+Right-click "Solution (DistroLauncher)" and click Deploy Solution from the pop-up menu
+
+Wait for the compilation to complete, then the build is complete.
+
+You can see the myditro.exe file in the folder.\x64\Debug\ DistroLauncher-appx \ Appx
+
+Package the Appx folder to publish
+
+
 
